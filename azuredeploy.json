@@ -1,45 +1,61 @@
 {
-  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-  "contentVersion": "1.0.0.0",
-  "parameters": {
-    "storageAccountName": {
-      "type": "string",
-      "metadata": {
-        "description": "Specifies the name of the Azure Storage account."
-      }
-    },
-    "location": {
-      "type": "string",
-      "defaultValue": "[resourceGroup().location]",
-      "metadata": {
-        "description": "Specifies the location in which the Azure Storage resources should be deployed."
-      }
-    }
-  },
-  "resources": [
-    {
-      "type": "Microsoft.Storage/storageAccounts",
-      "apiVersion": "2019-06-01",
-      "name": "[parameters('storageAccountName')]",
-      "location": "[parameters('location')]",
-      "sku": {
-        "name": "Standard_LRS",
-        "tier": "Standard"
-      },
-      "kind": "StorageV2",
-      "properties": {
-        "accessTier": "Hot"
-      },
-      "resources": [
-        {
-          "type": "blobServices/containers",
-          "apiVersion": "2020-08-01-preview",
-            "name": "[concat(parameters('storageAccountName'), '/default/$web')]",
-          "dependsOn": [
-            "[parameters('storageAccountName')]"
-          ]
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "storageAccountName": {
+            "defaultValue": "test2virtuo",
+            "type": "String"
+        },
+         "storageAccountlocation": {
+            "type": "string",
+            "defaultValue": "canadacentral"
         }
-      ]
-    }
-  ]
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2020-08-01-preview",
+            "name": "[parameters('storageAccountName')]",
+            "location": "[parameters('storageAccountlocation')]",
+            "sku": {
+                "name": "Standard_RAGRS",
+                "tier": "Standard"
+            },
+            "kind": "StorageV2",
+            "properties": {
+                "accessTier": "Hot"
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/blobServices",
+            "apiVersion": "2020-08-01-preview",
+            "name": "[concat(parameters('storageAccountName'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+            ],
+            "sku": {
+                "name": "Standard_RAGRS",
+                "tier": "Standard"
+            },
+            "properties": {
+                "deleteRetentionPolicy": {
+                    "enabled": false
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+            "apiVersion": "2020-08-01-preview",
+            "name": "[concat(parameters('storageAccountName'), '/default/$web')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts/blobServices', parameters('storageAccountName'), 'default')]",
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+            ],
+            "properties": {
+                "defaultEncryptionScope": "$account-encryption-key",
+                "denyEncryptionScopeOverride": false,
+                "publicAccess": "None"
+            }
+        }
+    ]
 }
